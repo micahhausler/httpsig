@@ -207,10 +207,12 @@ func paramString(p sfv.Parameter) (string, error) {
 	return string(v), nil
 }
 
-// A Policy sets the application requirements a signature must meet, per RFC
-// 9421 Section 3.2.1. The zero value enforces only the requirements of the
-// RFC itself: the expires parameter, if present, must not have passed, and
-// the created parameter, if present, must not be in the future.
+// A Policy sets the application requirements a signature must meet, per
+// [RFC 9421 Section 3.2.1]. The zero value enforces only the requirements of
+// the RFC itself: the expires parameter, if present, must not have passed,
+// and the created parameter, if present, must not be in the future.
+//
+// [RFC 9421 Section 3.2.1]: https://datatracker.ietf.org/doc/html/rfc9421#section-3.2.1
 type Policy struct {
 	// RequiredComponents are components the signature must cover.
 	// Signatures may cover more.

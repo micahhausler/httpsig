@@ -103,7 +103,7 @@ with specific errors rather than skipped.
 
 ## Testing
 
-The test suite includes the RFC 9421 Appendix B vectors: signature bases are
+The test suite includes the RFC 9421 [Appendix B](https://datatracker.ietf.org/doc/html/rfc9421#appendix-B) vectors: signature bases are
 compared byte for byte against the strings printed in the RFC, the RFC's
 signature values are verified against the RFC's keys, and the deterministic
 `hmac-sha256` and `ed25519` vectors reproduce the exact `Signature-Input`

@@ -11,7 +11,9 @@ import (
 )
 
 // A Component identifies a message component covered by a signature: an HTTP
-// field or a derived component, per RFC 9421 Section 2.
+// field or a derived component, per [RFC 9421 Section 2].
+//
+// [RFC 9421 Section 2]: https://datatracker.ietf.org/doc/html/rfc9421#section-2
 type Component struct {
 	// Name is the lowercase HTTP field name, or a derived component name
 	// beginning with "@".
@@ -45,8 +47,10 @@ const (
 	FieldTypeDictionary
 )
 
-// Derived component names defined by RFC 9421 Section 2.2 that apply to
+// Derived component names defined by [RFC 9421 Section 2.2] that apply to
 // requests.
+//
+// [RFC 9421 Section 2.2]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.2
 var derivedNames = map[string]bool{
 	"@method":         true,
 	"@target-uri":     true,
@@ -200,7 +204,9 @@ func newTarget(req *http.Request, scheme, authority string, sfTypes map[string]F
 }
 
 // normalizeAuthority lowercases the host and strips the scheme's default
-// port, per RFC 9110 Section 4.2.3.
+// port, per [RFC 9110 Section 4.2.3].
+//
+// [RFC 9110 Section 4.2.3]: https://datatracker.ietf.org/doc/html/rfc9110#section-4.2.3
 func normalizeAuthority(authority, scheme string) string {
 	authority = strings.ToLower(authority)
 	switch scheme {
@@ -213,7 +219,10 @@ func normalizeAuthority(authority, scheme string) string {
 }
 
 // componentValue derives the canonical value for a covered component, per
-// RFC 9421 Sections 2.1 and 2.2. The component must have been validated.
+// RFC 9421 Sections [2.1] and [2.2]. The component must have been validated.
+//
+// [2.1]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.1
+// [2.2]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.2
 func (t *target) componentValue(c Component) (string, error) {
 	if !strings.HasPrefix(c.Name, "@") {
 		return t.fieldValue(c)
@@ -259,7 +268,9 @@ func (t *target) rawQuery() string {
 	return ""
 }
 
-// fieldValue canonicalizes an HTTP field value per RFC 9421 Section 2.1.
+// fieldValue canonicalizes an HTTP field value per [RFC 9421 Section 2.1].
+//
+// [RFC 9421 Section 2.1]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.1
 func (t *target) fieldValue(c Component) (string, error) {
 	values := t.req.Header.Values(c.Name)
 	if len(values) == 0 && c.Name == "host" && t.req.Host != "" {
@@ -306,8 +317,10 @@ func (t *target) fieldValue(c Component) (string, error) {
 	return strings.Join(values, ", "), nil
 }
 
-// strictFieldValue reserializes a structured field value per RFC 9421
-// Section 2.1.1. The field's type must be registered in sfTypes.
+// strictFieldValue reserializes a structured field value per
+// [RFC 9421 Section 2.1.1]. The field's type must be registered in sfTypes.
+//
+// [RFC 9421 Section 2.1.1]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.1.1
 func (t *target) strictFieldValue(name string, values []string) (string, error) {
 	ft, ok := t.sfTypes[name]
 	if !ok {
@@ -364,8 +377,10 @@ func canonicalFieldValue(v string) string {
 	return b.String()
 }
 
-// queryParam derives the value of a named query parameter per RFC 9421
-// Section 2.2.8. The name is matched in its encoded form.
+// queryParam derives the value of a named query parameter per
+// [RFC 9421 Section 2.2.8]. The name is matched in its encoded form.
+//
+// [RFC 9421 Section 2.2.8]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.2.8
 func (t *target) queryParam(name string) (string, error) {
 	var (
 		value string
@@ -412,7 +427,9 @@ func formDecode(s string) string {
 
 // formEncode percent-encodes a string per the WHATWG URL specification's
 // application/x-www-form-urlencoded percent-encode set, except that spaces
-// are encoded as %20 per RFC 9421 Section 2.2.8.
+// are encoded as %20 per [RFC 9421 Section 2.2.8].
+//
+// [RFC 9421 Section 2.2.8]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.2.8
 func formEncode(s string) string {
 	const hex = "0123456789ABCDEF"
 	var b strings.Builder

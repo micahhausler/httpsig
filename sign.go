@@ -15,7 +15,9 @@ import (
 type SignOptions struct {
 	// Components are the message components to cover. If nil, the
 	// signature covers @method and @target-uri. An empty, non-nil slice
-	// covers no components, which RFC 9421 Section 7.2.1 discourages.
+	// covers no components, which [RFC 9421 Section 7.2.1] discourages.
+	//
+	// [RFC 9421 Section 7.2.1]: https://datatracker.ietf.org/doc/html/rfc9421#section-7.2.1
 	Components []Component
 
 	// Label identifies the signature within the message. It defaults to

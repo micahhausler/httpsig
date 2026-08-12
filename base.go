@@ -17,9 +17,11 @@ type covered struct {
 	c  Component
 }
 
-// signatureBase builds the signature base per RFC 9421 Section 2.5. params
-// is the @signature-params inner list, whose items must be the identifiers
-// in ids.
+// signatureBase builds the signature base per [RFC 9421 Section 2.5].
+// params is the @signature-params inner list, whose items must be the
+// identifiers in ids.
+//
+// [RFC 9421 Section 2.5]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.5
 func signatureBase(t *target, ids []covered, params sfv.InnerList) ([]byte, error) {
 	var base []byte
 	for i, cc := range ids {

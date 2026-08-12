@@ -21,8 +21,10 @@ import (
 // An Algorithm is an entry in the IANA "HTTP Signature Algorithms" registry.
 type Algorithm string
 
-// Algorithms defined by RFC 9421 Section 3.3. JSON Web Signature algorithms
-// are not supported.
+// Algorithms defined by [RFC 9421 Section 3.3]. JSON Web Signature
+// algorithms are not supported.
+//
+// [RFC 9421 Section 3.3]: https://datatracker.ietf.org/doc/html/rfc9421#section-3.3
 const (
 	RSAPSSSHA512    Algorithm = "rsa-pss-sha512"
 	RSAV15SHA256    Algorithm = "rsa-v1_5-sha256"
@@ -33,14 +35,18 @@ const (
 )
 
 // A Signer signs a signature base, implementing the HTTP_SIGN primitive of
-// RFC 9421 Section 3.3.
+// [RFC 9421 Section 3.3].
+//
+// [RFC 9421 Section 3.3]: https://datatracker.ietf.org/doc/html/rfc9421#section-3.3
 type Signer interface {
 	Algorithm() Algorithm
 	Sign(base []byte) ([]byte, error)
 }
 
 // A Verifier checks a signature over a signature base, implementing the
-// HTTP_VERIFY primitive of RFC 9421 Section 3.3.
+// HTTP_VERIFY primitive of [RFC 9421 Section 3.3].
+//
+// [RFC 9421 Section 3.3]: https://datatracker.ietf.org/doc/html/rfc9421#section-3.3
 type Verifier interface {
 	Algorithm() Algorithm
 	Verify(base, signature []byte) error
@@ -141,7 +147,9 @@ func rsaHash(alg Algorithm) (crypto.Hash, func([]byte) []byte) {
 }
 
 // pssOptions uses a salt length equal to the SHA-512 digest length (64
-// bytes), per RFC 9421 Section 3.3.1.
+// bytes), per [RFC 9421 Section 3.3.1].
+//
+// [RFC 9421 Section 3.3.1]: https://datatracker.ietf.org/doc/html/rfc9421#section-3.3.1
 var pssOptions = &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash, Hash: crypto.SHA512}
 
 type rsaSigner struct {
@@ -216,7 +224,10 @@ type ecdsaSigner struct {
 func (s *ecdsaSigner) Algorithm() Algorithm { return s.alg }
 
 // Sign encodes the signature as r and s zero-padded to the curve size and
-// concatenated, per RFC 9421 Sections 3.3.4 and 3.3.5.
+// concatenated, per RFC 9421 Sections [3.3.4] and [3.3.5].
+//
+// [3.3.4]: https://datatracker.ietf.org/doc/html/rfc9421#section-3.3.4
+// [3.3.5]: https://datatracker.ietf.org/doc/html/rfc9421#section-3.3.5
 func (s *ecdsaSigner) Sign(base []byte) ([]byte, error) {
 	h := ecdsaHash(s.alg)
 	h.Write(base)

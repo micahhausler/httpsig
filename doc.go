@@ -1,7 +1,8 @@
 // Copyright 2026 Micah Hausler
 // SPDX-License-Identifier: Apache-2.0
 
-// Package httpsig implements HTTP message signatures as defined in RFC 9421.
+// Package httpsig implements HTTP message signatures as defined in
+// [RFC 9421].
 //
 // A client signs a request with [Sign], choosing the covered components and
 // signature parameters:
@@ -46,4 +47,6 @@
 // This package signs and verifies request messages. Response signing, the
 // req and tr component parameters, and JSON Web Signature algorithms are not
 // supported.
+//
+// [RFC 9421]: https://datatracker.ietf.org/doc/html/rfc9421
 package httpsig
