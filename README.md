@@ -2,11 +2,19 @@
 
 A Go implementation of HTTP Message Signatures ([RFC 9421](https://www.rfc-editor.org/rfc/rfc9421)).
 
-The package provides the wire-level primitives: sign a request with a key,
-parse the signatures on a request, and verify one against a key and policy.
-Key distribution, signature selection, and nonce replay tracking belong to
-the application. Higher-level client and server packages can build on these
-primitives.
+The root package provides the wire-level primitives: sign a request with a
+key, parse the signatures on a request, and verify one against a key and
+policy. Key distribution, signature selection, and nonce replay tracking
+belong to the application.
+
+Three packages build on the primitives:
+
+- [`sigconfig`](./sigconfig) — serializable configuration: a client's
+  `SigningProfile` and a server's `VerifyPolicy`
+- [`client`](./client) — an `http.RoundTripper` that signs requests per a
+  profile
+- [`server`](./server) — `http.Handler` middleware that verifies requests
+  per a policy
 
 ```
 go get github.com/micahhausler/httpsig
@@ -79,6 +87,55 @@ Servers behind a TLS-terminating proxy must set `ParseOptions.Scheme` and
 `ParseOptions.Authority` to the external values the client signed. The
 `X-Forwarded-*` fields are untrusted input and are never consulted.
 
+## Client and server
+
+The `client` and `server` packages handle the mechanics above, driven by
+config that can live in a file. RFC 9421 gives a server no way to tell
+clients what to sign, so coordination is out-of-band: the client's profile
+and the server's policy are written separately, and agree on the covered
+components. Components are written in the RFC's own wire syntax, so a config
+file diffs directly against the `Signature-Input` header on a request:
+
+```yaml
+# profile.yaml (client)              # policy.yaml (server)
+components:                          # components:
+  - '"@method"'                      #   - '"@method"'
+  - '"@authority"'                   #   - '"@authority"'
+  - '"@path"'                        #   - '"@path"'
+keyId: acct-42                       # maxAge: 5m
+ttl: 30s                             # algorithms: [ed25519]
+```
+
+The body is bound to the signature through `Content-Digest` (RFC 9530),
+governed by the `contentDigest` mode rather than the component list, because
+bodies come and go per request: with the default `when-body`, a POST's body
+is digested and covered while a GET signs without one — and a request that
+arrives with a body but no covered digest is rejected. One profile serves
+both request shapes.
+
+```go
+rt, err := client.NewTransport(nil, signer, profile)
+// http.Client{Transport: rt} signs every request
+```
+
+The server side wraps a handler. The application supplies the key lookup and
+gets a typed identity back; the lookup sees the whole request, so key
+material carried in a request header (a session token, for example) needs no
+side channel:
+
+```go
+dir := server.KeyDirectoryFunc[User](func(r *http.Request, sig *httpsig.Signature) (httpsig.Verifier, User, error) {
+	return lookup(sig.KeyID()) // application-defined
+})
+mw, err := server.New(dir, policy)
+mux.Handle("/", mw.Wrap(handler))
+// in the handler:
+v, ok := server.FromRequest[User](r)
+```
+
+The types carry json tags only; for YAML files, decode with a converter that
+honors them, such as `sigs.k8s.io/yaml`.
+
 ## Algorithms
 
 | Registry name       | Key types                            |
@@ -99,7 +156,9 @@ attack in the primitive rather than in documentation.
 Request messages only. Not supported: response signing, the `req` and `tr`
 component parameters, `@status`, JSON Web Signature algorithms, and the
 `Accept-Signature` field. Unsupported components and parameters are rejected
-with specific errors rather than skipped.
+with specific errors rather than skipped. In `Content-Digest`, only
+`sha-256` and `sha-512` are supported; the deprecated registry entries are
+deliberately absent.
 
 ## Testing
 

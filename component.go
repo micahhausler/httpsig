@@ -120,6 +120,20 @@ func (c Component) identifier() sfv.Item {
 	return item
 }
 
+// ParseComponent parses a component identifier in the wire syntax of
+// [RFC 9421 Section 2.1]: a quoted string followed by optional parameters,
+// such as `"@method"` or `"@query-param";name="q"`. It accepts exactly the
+// identifiers valid in a Signature-Input field for a request.
+//
+// [RFC 9421 Section 2.1]: https://datatracker.ietf.org/doc/html/rfc9421#section-2.1
+func ParseComponent(s string) (Component, error) {
+	item, err := sfv.ParseItem(s)
+	if err != nil {
+		return Component{}, syntaxErrorf("component identifier %q: %v", s, err)
+	}
+	return parseComponent(item)
+}
+
 // parseComponent interprets a structured field item from a Signature-Input
 // inner list as a component identifier.
 func parseComponent(item sfv.Item) (Component, error) {

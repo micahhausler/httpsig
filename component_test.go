@@ -373,3 +373,40 @@ func innerListOf(ids []covered) sfv.InnerList {
 	}
 	return il
 }
+
+func TestParseComponent(t *testing.T) {
+	tests := []struct {
+		in   string
+		want Component
+		err  bool
+	}{
+		{in: `"@method"`, want: Component{Name: "@method"}},
+		{in: `"content-digest"`, want: Component{Name: "content-digest"}},
+		{in: `"@query-param";name="q"`, want: Component{Name: "@query-param", QueryParam: "q"}},
+		{in: `"example-dict";key="a"`, want: Component{Name: "example-dict", Key: "a"}},
+		{in: `"example-header";bs`, want: Component{Name: "example-header", BS: true}},
+		{in: `"example-dict";sf`, want: Component{Name: "example-dict", SF: true}},
+		{in: `@method`, err: true},        // bare form: not a quoted string
+		{in: `"@status"`, err: true},      // response-only
+		{in: `"@method";req`, err: true},  // req parameter unsupported
+		{in: `"Content-Type"`, err: true}, // not lowercase
+		{in: `"@nope"`, err: true},        // unknown derived component
+		{in: ``, err: true},
+	}
+	for _, tt := range tests {
+		got, err := ParseComponent(tt.in)
+		if tt.err {
+			if err == nil {
+				t.Errorf("ParseComponent(%q) = %+v, want error", tt.in, got)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("ParseComponent(%q): %v", tt.in, err)
+			continue
+		}
+		if got != tt.want {
+			t.Errorf("ParseComponent(%q) = %+v, want %+v", tt.in, got, tt.want)
+		}
+	}
+}
