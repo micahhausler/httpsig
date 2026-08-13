@@ -1,0 +1,32 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: go vet
+        run: go vet ./...
+      - name: no unexpected dependencies
+        # The module depends on sfv and nothing else; fail if go.mod
+        # gains a requirement.
+        run: |
+          deps="$(go list -m all | grep -v -e '^github.com/micahhausler/httpsig$' -e '^github.com/micahhausler/sfv ' || true)"
+          if [ -n "$deps" ]; then
+            echo "unexpected dependencies:" && echo "$deps" && exit 1
+          fi
+      - name: go test
+        run: go test -race ./...
