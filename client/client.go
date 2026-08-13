@@ -41,7 +41,7 @@ import (
 	"time"
 
 	"github.com/micahhausler/httpsig"
-	"github.com/micahhausler/httpsig/internal/contentdigest"
+	"github.com/micahhausler/httpsig/contentdigest"
 	"github.com/micahhausler/httpsig/sigconfig"
 )
 

@@ -6,6 +6,8 @@ package sigconfig
 import (
 	"fmt"
 	"time"
+
+	"github.com/micahhausler/httpsig/contentdigest"
 )
 
 // A VerifyPolicy is a server's minimum signature requirements. A request is
@@ -108,7 +110,7 @@ func bodyLimit(v int64) int64 {
 // applied.
 func (p VerifyPolicy) AcceptedDigests() []string {
 	if len(p.DigestAlgorithms) == 0 {
-		return []string{SHA256, SHA512}
+		return contentdigest.Supported()
 	}
 	return p.DigestAlgorithms
 }

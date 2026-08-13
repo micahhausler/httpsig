@@ -87,6 +87,30 @@ Servers behind a TLS-terminating proxy must set `ParseOptions.Scheme` and
 `ParseOptions.Authority` to the external values the client signed. The
 `X-Forwarded-*` fields are untrusted input and are never consulted.
 
+## Content-Digest
+
+The `httpsig` package never reads a body. A body is bound to a signature
+through `Content-Digest` (RFC 9530), and covering the `content-digest`
+component binds only that field's *value*. Binding the value to the body is a
+separate step, in `contentdigest`:
+
+```go
+value, err := contentdigest.Value(contentdigest.SHA256, body)
+req.Header.Set("Content-Digest", value) // before Sign, so the signature covers it
+
+// on the verifying side, in addition to sig.Verify:
+err = contentdigest.Verify(r.Header.Values("Content-Digest"), body, contentdigest.Supported())
+```
+
+Neither step implies the other. A verifier that requires the component and
+skips `contentdigest.Verify` accepts any body the sender chooses, and the
+signature still verifies, so the omission is silent. Every entry with a
+supported algorithm must match the body, and a field carrying only unknown
+algorithms is rejected rather than treated as absent.
+
+The `server` package does both steps from one policy, and is the shorter path
+for any request with a body.
+
 ## Client and server
 
 The `client` and `server` packages handle the mechanics above, driven by

@@ -54,6 +54,9 @@ func TestVerify(t *testing.T) {
 		{name: "not a dictionary", values: []string{`::bogus`}, body: body, accepted: both, reject: true},
 		{name: "entry not a byte sequence", values: []string{`sha-256="text"`}, body: body, accepted: both, reject: true},
 		{name: "inner list entry", values: []string{`sha-256=(:AAAA: :BBBB:)`}, body: body, accepted: both, reject: true},
+		// An empty accepted set is the verifier's own misconfiguration, so
+		// it must not be reported as a rejected message.
+		{name: "no accepted algorithms", values: []string{rfcSHA256}, body: body, accepted: nil, reject: true},
 	}
 	for _, tt := range tests {
 		err := Verify(tt.values, tt.body, tt.accepted)
@@ -68,6 +71,30 @@ func TestVerify(t *testing.T) {
 		if err != nil {
 			t.Errorf("%s: %v", tt.name, err)
 		}
+	}
+	// The empty-accepted-set error is distinct from a message that carries
+	// no accepted entry: a caller matching ErrNoAcceptedDigest to blame the
+	// sender must not match its own missing configuration.
+	if err := Verify([]string{rfcSHA256}, body, nil); errors.Is(err, ErrNoAcceptedDigest) {
+		t.Error("empty accepted set reported as ErrNoAcceptedDigest")
+	}
+}
+
+func TestSupported(t *testing.T) {
+	got := Supported()
+	if len(got) != 2 || got[0] != SHA256 || got[1] != SHA512 {
+		t.Fatalf("Supported() = %v", got)
+	}
+	// Every name Supported returns must be computable, and the returned
+	// slice must not alias state a caller can mutate.
+	for _, alg := range got {
+		if _, err := Value(alg, nil); err != nil {
+			t.Errorf("Value(%s): %v", alg, err)
+		}
+	}
+	got[0] = "md5"
+	if Supported()[0] != SHA256 {
+		t.Error("Supported returns aliased state")
 	}
 }
 

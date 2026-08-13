@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/micahhausler/httpsig"
+	"github.com/micahhausler/httpsig/contentdigest"
 )
 
 // A DigestMode states when a signature must cover the request body via the
@@ -41,10 +42,11 @@ const (
 
 // Digest algorithms this module computes and verifies, from the IANA "Hash
 // Algorithms for HTTP Digest Fields" registry. The deprecated and insecure
-// registry entries are deliberately absent.
+// registry entries are deliberately absent. These name the same algorithms
+// as the [contentdigest] constants, which is where the set is defined.
 const (
-	SHA256 = "sha-256"
-	SHA512 = "sha-512"
+	SHA256 = contentdigest.SHA256
+	SHA512 = contentdigest.SHA512
 )
 
 // Coverage is the component set a signature covers. It is the shared

@@ -38,6 +38,17 @@
 // Key distribution, signature selection among multiple signatures, and nonce
 // replay tracking are application concerns and are left to the caller.
 //
+// This package does not read message bodies. A body is bound to a signature
+// through the Content-Digest field of RFC 9530, and covering the
+// content-digest component binds only that field's value: nothing here checks
+// that value against the body. Verifying a request with a body therefore
+// takes a second step, from package
+// [github.com/micahhausler/httpsig/contentdigest]. A verifier that requires
+// the component and skips that step accepts any body the sender chooses, and
+// the signature still verifies, so the omission is silent. The middleware in
+// [github.com/micahhausler/httpsig/server] does both steps from one policy
+// and is the shorter path.
+//
 // Anyone who can reach a server can attach a signature to a request, so
 // express verification requirements positively: accept a request when at
 // least one signature with the expected tag or key verifies under a
