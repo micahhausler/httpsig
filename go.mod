@@ -1,5 +1,5 @@
 module github.com/micahhausler/httpsig
 
-go 1.26.5
+go 1.26.0
 
-require github.com/micahhausler/sfv v0.1.0
+require github.com/micahhausler/sfv v0.2.0
