@@ -7,7 +7,7 @@ key, parse the signatures on a request, and verify one against a key and
 policy. Key distribution, signature selection, and nonce replay tracking
 belong to the application.
 
-Three packages build on the primitives:
+These packages build on the primitives:
 
 - [`sigconfig`](./sigconfig) — serializable configuration: a client's
   `SigningProfile` and a server's `VerifyPolicy`
@@ -15,6 +15,10 @@ Three packages build on the primitives:
   profile
 - [`server`](./server) — `http.Handler` middleware that verifies requests
   per a policy
+- [`contentdigest`](./contentdigest) — the `Content-Digest` field of RFC
+  9530, which binds a request body to a signature
+- [`keyscope`](./keyscope) — scoped HMAC signing keys, so a verifier holds a
+  key limited to one scope rather than a long-term secret
 
 ```
 go get github.com/micahhausler/httpsig
