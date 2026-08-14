@@ -69,12 +69,12 @@
 //
 // A server's key lookup derives the verifying key per request:
 //
-//		dir := server.KeyDirectoryFunc[string](
-//	     func(r *http.Request, sig *httpsig.Signature) (httpsig.Verifier, string, error) {
-//	         v, err := key.Verifier(sig.KeyID(), sig.Created())
-//	         return v, sig.KeyID(), err
-//	     },
-//	 )
+//	dir := server.KeyDirectoryFunc[string](
+//	    func(r *http.Request, sig *httpsig.Signature) (httpsig.Verifier, string, error) {
+//	        v, err := key.Verifier(sig.KeyID(), sig.Created())
+//	        return v, sig.KeyID(), err
+//	    },
+//	)
 //
 // A lookup serving many credentials parses the keyid first with [ParseKeyID],
 // fetches the scoped key its broker holds for that name and scope, and then
@@ -92,7 +92,7 @@
 // key hand-off and kept the blast radius. Signatures under a derived key use
 // the hmac-sha256 algorithm of RFC 9421, over RFC 9421's signature base.
 //
-// Chains with a date step require the signature's `created` parameter.
+// Chains with a date step require the signature's created parameter.
 // Implementations must pair the verifier with a policy that sets MaxAge and
 // reject signatures without one. A date-scoped key rejects requests from any
 // other UTC day, including yesterday's requests just after midnight. A
@@ -112,6 +112,5 @@
 // In the same way, callers can declare ladders with other steps such as a
 // tenant, an environment, a cluster.
 //
-// [AWS SigV4]:
-// https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-create-signed-request.html
+// [AWS SigV4]: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-create-signed-request.html
 package keyscope
