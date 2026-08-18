@@ -5,6 +5,7 @@ package httpsig
 
 import (
 	"crypto/tls"
+	"errors"
 	"net/http"
 	"net/url"
 	"testing"
@@ -299,6 +300,94 @@ func TestUnknownStructuredFieldType(t *testing.T) {
 	tgt := newTarget(req, "", "", nil)
 	if _, err := tgt.componentValue(Component{Name: "x-thing", SF: true}); err == nil {
 		t.Error("unknown structured field type: no error")
+	}
+}
+
+// decimalTarget builds a target whose example-list field carries value and is
+// registered as a list, so the sf flag reserializes it.
+func decimalTarget(value string) *target {
+	req := &http.Request{
+		URL:    &url.URL{},
+		Host:   "example.com",
+		Header: http.Header{"Example-List": {value}},
+	}
+	return newTarget(req, "", "", map[string]FieldType{"example-list": FieldTypeList})
+}
+
+func TestStrictListDecimal(t *testing.T) {
+	// Section 2.1.1 reserialization of a list carrying decimals. RFC 9651
+	// Section 4.1.5 fixes the output form, so these are the canonical
+	// spellings a verifier must reconstruct byte for byte to reach the same
+	// signature base as the signer.
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{"1.5,   2.25", "1.5, 2.25"}, // whitespace between members collapses
+		{"1.500", "1.5"},             // step 9 emits only significant digits
+		{"2.0", "2.0"},               // step 8 keeps one zero, never a bare "2"
+		{"-1.5", "-1.5"},
+		{"-0.0", "0.0"}, // step 5 tests the sign after rounding
+		// Three fractional digits are carried through exactly. These are
+		// the values a float64 cannot hold, so they pin that no rounding
+		// happens on a value that arrived already in range.
+		{"0.005", "0.005"},
+		{"0.015", "0.015"},
+		{"0.125", "0.125"},
+		// The widest decimal the grammar allows: 12 integer digits and 3
+		// fractional.
+		{"999999999999.999", "999999999999.999"},
+		{"-999999999999.999", "-999999999999.999"},
+		// A decimal is also a bare item in parameter and inner-list
+		// position, which reach the serializer by a different path than a
+		// top-level member.
+		{"1.5;q=0.125", "1.5;q=0.125"},
+		{"(0.5   0.25);w=0.005", "(0.5 0.25);w=0.005"},
+	}
+	for _, tt := range tests {
+		got, err := decimalTarget(tt.in).componentValue(Component{Name: "example-list", SF: true})
+		if err != nil {
+			t.Errorf("componentValue(%q): %v", tt.in, err)
+			continue
+		}
+		if got != tt.want {
+			t.Errorf("componentValue(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+func TestStrictListDecimalErrors(t *testing.T) {
+	// A decimal outside the grammar of RFC 9651 Section 3.3.2 fails the
+	// component as malformed rather than being rounded or truncated into
+	// range. The fourth fractional digit is the case that matters: it is the
+	// only input that could reach the rounding rule of Section 4.1.5, and
+	// parsing refuses it before any rounding decision exists.
+	//
+	// Each case carries a control that differs only in the decimal and must
+	// be accepted. Without it the test would also pass if the field stopped
+	// being reserialized at all, because an unregistered field type is
+	// reported as the same error type.
+	tests := []struct {
+		name    string
+		in      string
+		control string
+	}{
+		{"four fractional digits", "1.0015", "1.001"},
+		{"thirteen integer digits", "1234567890123.5", "123456789012.5"},
+		{"trailing decimal point", "1.", "1.0"},
+		{"no integer component", ".5", "0.5"},
+		{"sign with no digits", "-", "-1.0"},
+	}
+	c := Component{Name: "example-list", SF: true}
+	for _, tt := range tests {
+		_, err := decimalTarget(tt.in).componentValue(c)
+		var se *SyntaxError
+		if !errors.As(err, &se) {
+			t.Errorf("%s (%q): err = %v, want *SyntaxError", tt.name, tt.in, err)
+		}
+		if _, err := decimalTarget(tt.control).componentValue(c); err != nil {
+			t.Errorf("%s control (%q): %v", tt.name, tt.control, err)
+		}
 	}
 }
 
